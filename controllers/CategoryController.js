@@ -71,7 +71,7 @@ class CategoryController {
   };
   static getEmployerCategory = async (req, res) => {
     try {
-      const { role, _id, name } = req.UserData; // use req.UserData consistently
+      const { role, name } = req.UserData; // use req.UserData consistently
       if (role === "jobSeeker") {
         return res.status(400).json({
           status: "failed",
@@ -83,11 +83,11 @@ class CategoryController {
       const order = req.query.order === "desc" ? -1 : 1; // Default is ascending order (1), descending (-1)
 
       // Fetch jobs where the employer's ID matches the user's ID and apply sorting
-      const jobs = await Category.find({ postedBy: _id }).sort({
+      const category= await Category.find().sort({
         [sortBy]: order,
       });
 
-      if (!jobs.length) {
+      if (!category.length) {
         return res.status(404).json({
           status: "failed",
           message: "No Category found for this employer.",
@@ -97,7 +97,7 @@ class CategoryController {
       return res.status(200).json({
         status: "success",
         message: `Category Posted by ${name}`,
-        jobs,
+        category,
       });
     } catch (error) {
       console.error(error);
