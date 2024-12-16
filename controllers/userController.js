@@ -6,7 +6,7 @@ class userController {
   static signUp = async (req, res) => {
     try {
       const { name, email, password, phone, role, confirmPassword } = req.body;
-      console.log(req.body);
+      // console.log(req.body);
       // Check if all fields are provided
       if (!name || !email || !password || !phone || !role || !confirmPassword) {
         return res

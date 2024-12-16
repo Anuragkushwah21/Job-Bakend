@@ -1,7 +1,7 @@
 const { model } = require("mongoose");
 const ApplicationModel = require("../models/ApplicationModel");
 const jobModel = require("../models/job.model");
-const cloudinary=require("cloudinary").v2
+const cloudinary = require("cloudinary").v2;
 
 class ApplicationController {
   static postApplication = async (req, res) => {
@@ -20,7 +20,12 @@ class ApplicationController {
         });
       }
       const { resume } = req.files;
-      const allowedFormats = ["image/png","application/pdf", "image/jpeg", "image/webp"]; 
+      const allowedFormats = [
+        "image/png",
+        "application/pdf",
+        "image/jpeg",
+        "image/webp",
+      ];
       if (!allowedFormats.includes(resume.mimetype)) {
         res.status(400).json({
           status: "failed",
@@ -147,23 +152,39 @@ class ApplicationController {
   static jobSeekerDeleteApplication = async (req, res) => {
     try {
       const { role } = req.UserData;
+      // Check if the user role is "employer"
       if (role === "employer") {
-        res.status(400).json({
+        return res.status(400).json({
           status: "failed",
-          message: "Employer not allowed to access this resource..",
+          message: "Employers are not allowed to access this resource.",
         });
       }
       const { id } = req.params;
-      const applications = await ApplicationModel.findById(id);
-      if (!applications) {
-        await ApplicationModel.deleteOne();
-        res.status(200).json({
-          success: true,
-          message: "Application Deleted!",
+
+      // Fetch the application by ID
+      const application = await ApplicationModel.findById(id);
+
+      // Check if the application exists
+      if (!application) {
+        return res.status(404).json({
+          status: "failed",
+          message: "Application not found.",
         });
       }
+
+      // Delete the application
+      await ApplicationModel.deleteOne({ _id: id });
+
+      return res.status(200).json({
+        success: true,
+        message: "Application deleted successfully!",
+      });
     } catch (error) {
-      console.log(error);
+      console.error("Error deleting application:", error);
+      return res.status(500).json({
+        status: "failed",
+        message: "An error occurred while deleting the application.",
+      });
     }
   };
 }
