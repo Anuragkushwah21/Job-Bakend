@@ -37,6 +37,6 @@ route.get('/getallCategory',verifyToken,CategoryController.getallCategory)
 route.get('/getCategoryById/:id',verifyToken,CategoryController.getAllCategoryById)
 route.get("/categoryJob/:cName", verifyToken, CategoryController.JobGetByCategory)
 route.get("/employerCategory", verifyToken, CategoryController.getEmployerCategory)
-route.delete("/delete/:id", verifyToken, CategoryController.deleteCategory)
+route.delete("/deleteCategory/:id", verifyToken, CategoryController.deleteCategory)
 
 module.exports = route
