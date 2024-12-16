@@ -147,7 +147,7 @@ class ApplicationController {
   static jobSeekerDeleteApplication = async (req, res) => {
     try {
       const { role } = req.UserData;
-      if (role === "jobSeeker") {
+      if (role === "employer") {
         res.status(400).json({
           status: "failed",
           message: "Employer not allowed to access this resource..",

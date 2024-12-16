@@ -13,6 +13,8 @@ route.get("/getUser", verifyToken, userController.getUser)
 route.post('/signOut', verifyToken, userController.signOut)
 route.post('/updatePassword', verifyToken, userController.updatePassword)
 route.post('/updateProfile', verifyToken, userController.updateProfile)
+route.post("/forgotPassword", userController.ForgotPassword);
+route.post("/resetPassword", userController.ResetPassword);
 
 
 // jobs route
