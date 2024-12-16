@@ -3,23 +3,41 @@ const jobModel = require("../models/job.model");
 class CategoryController {
   static CategoryInsert = async (req, res) => {
     try {
-      const { categoryName, icon } = req.body;
-      const result = new Category(req.body);
+      const { role, _id: postedBy } = req.UserData;
 
-      if (!result) {
-        return res
-          .status(404)
-          .json({ status: "fail", message: "category data not found" });
+      // Check if the user is authorized
+      if (role !== "employer") {
+        return res.status(403).json({
+          status: "failed",
+          message: "You are not authorized to insert categories!",
+        });
       }
 
-      const saveCategory = await result.save();
-      res.status(200).json({
+      const { categoryName, icon } = req.body;
+
+      // Validate required fields
+      if (!categoryName || !icon) {
+        return res.status(400).json({
+          status: "failed",
+          message: "Category name and icon are required.",
+        });
+      }
+
+      // Create and save category with postedById
+      const category = new Category({ categoryName, icon, postedBy });
+      const saveCategory = await category.save();
+
+      return res.status(200).json({
         status: "success",
-        message: "category save successfully",
+        message: "Category saved successfully.",
         saveCategory,
       });
     } catch (error) {
-      res.status(590).json({ status: "failed", message: error.message });
+      console.error("Error inserting category:", error.message);
+      return res.status(500).json({
+        status: "failed",
+        message: "Internal server error.",
+      });
     }
   };
   static getallCategory = async (req, res) => {
@@ -71,39 +89,54 @@ class CategoryController {
   };
   static getEmployerCategory = async (req, res) => {
     try {
-      const { role, name } = req.UserData; // use req.UserData consistently
-      if (role === "jobSeeker") {
-        return res.status(400).json({
+      // Ensure req.UserData exists
+      if (!req.UserData) {
+        return res.status(401).json({
           status: "failed",
-          message: "You are not authorized to access this data",
+          message: "Unauthorized access. User data is missing.",
         });
       }
-      // Fetch query parameters for sorting
-      const sortBy = req.query.sortBy || "createdAt"; // Default sorting by createdAt
-      const order = req.query.order === "desc" ? -1 : 1; // Default is ascending order (1), descending (-1)
 
-      // Fetch jobs where the employer's ID matches the user's ID and apply sorting
-      const category= await Category.find().sort({
+      const { role, _id, name } = req.UserData;
+
+      // Authorization check
+      if (role !== "employer") {
+        return res.status(403).json({
+          status: "failed",
+          message: "You are not authorized to access this data.",
+        });
+      }
+
+      // Validate query parameters for sorting
+      const validSortFields = ["createdAt", "name", "updatedAt"];
+      const sortBy = validSortFields.includes(req.query.sortBy)
+        ? req.query.sortBy
+        : "createdAt";
+      const order = req.query.order === "desc" ? -1 : 1;
+
+      // Fetch categories for the employer and apply sorting
+      const category = await Category.find({ postedBy: _id }).sort({
         [sortBy]: order,
       });
 
-      if (!category.length) {
+      if (!category || category.length === 0) {
         return res.status(404).json({
           status: "failed",
-          message: "No Category found for this employer.",
+          message: "No categories found for this employer.",
         });
       }
 
       return res.status(200).json({
         status: "success",
-        message: `Category Posted by ${name}`,
+        message: `Categories posted by ${name}`,
         category,
       });
     } catch (error) {
-      console.error(error);
-      return res
-        .status(500)
-        .json({ status: "failed", message: "Internal server error." });
+      console.error("Error fetching employer categories:", error.message);
+      return res.status(500).json({
+        status: "failed",
+        message: "Internal server error.",
+      });
     }
   };
   static deleteCategory = async (req, res) => {
