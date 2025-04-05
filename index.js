@@ -18,7 +18,12 @@ const app = express();
 
 const cors = require("cors");
 
-app.use(cors()); //for api communication in react
+app.use(cors(
+  {
+    origin: "https://pnjobportal.netlify.app/",
+    credentials:true,
+  }
+)); //for api communication in react
 //file upload
 const fileupload = require("express-fileupload");
 //file upload
