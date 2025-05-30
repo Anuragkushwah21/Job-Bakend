@@ -20,7 +20,7 @@ const cors = require("cors");
 
 app.use(cors(
   {
-    origin: "pnjobportal.netlify.app",
+    origin: "https://pnjobportal.netlify.app",
     credentials:true,
   }
 )); //for api communication in react
