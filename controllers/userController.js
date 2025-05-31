@@ -6,41 +6,45 @@ class userController {
   static signUp = async (req, res) => {
     try {
       const { name, email, password, phone, role, confirmPassword } = req.body;
-      // console.log(req.body);
-      // Check if all fields are provided
+
+      // Validate required fields
       if (!name || !email || !password || !phone || !role || !confirmPassword) {
-        return res
-          .status(400)
-          .json({ status: "failed", message: "All fields are required!" });
+        return res.status(400).json({
+          status: "failed",
+          message: "All fields are required!",
+        });
       }
 
-      // Check if password and confirm password match
+      // Check password match
       if (password !== confirmPassword) {
-        return res
-          .status(400)
-          .json({ status: "failed", message: "Password doesn't match" });
+        return res.status(400).json({
+          status: "failed",
+          message: "Password doesn't match",
+        });
       }
 
-      // Check if the user already exists
-      const existingUser = await userModel.findOne({ email: email });
+      // Check if email already exists
+      const existingUser = await userModel.findOne({ email });
       if (existingUser) {
-        return res
-          .status(400)
-          .json({ status: "failed", message: "Email already exists" });
+        return res.status(400).json({
+          status: "failed",
+          message: "Email already exists",
+        });
       }
 
-      // Check if the phone number already exists
+      // Check if phone already exists
       const phoneNo = await userModel.findOne({ phone });
       if (phoneNo) {
-        return res
-          .status(400)
-          .json({ status: "failed", message: "Phone number already exists" });
+        return res.status(400).json({
+          status: "failed",
+          message: "Phone number already exists",
+        });
       }
 
-      // Hashing the password
+      // Hash password
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      // Create a new user
+      // Create new user
       const userData = await userModel.create({
         name,
         email,
@@ -49,14 +53,23 @@ class userController {
         role,
       });
 
-      // Generating token and storing in cookies
-      const token = jwt.sign({ ID: userData._id }, process.env.JWT_SECRET);
-      res.cookie("token", token, { httpOnly: true });
+      // Generate JWT token
+      const token = jwt.sign({ id: userData._id }, process.env.JWT_SECRET, {
+        expiresIn: "7d", // optional: token expiry
+      });
 
-      // Return the created user data or a success message
+      // Set token as HTTP-only cookie
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production", // only on HTTPS in production
+        sameSite: "Lax",
+      });
+
+      // Send response including token and user
       return res.status(201).json({
         status: "success",
         message: "User registered successfully",
+        token, // ✅ include token here
         data: userData,
       });
     } catch (error) {
@@ -72,12 +85,13 @@ class userController {
 
       // Check if all fields are provided
       if (!email || !password || !role) {
-        return res
-          .status(400)
-          .json({ status: "failed", message: "All fields are required!" });
+        return res.status(400).json({
+          status: "failed",
+          message: "All fields are required!",
+        });
       }
 
-      //check user role
+      // Find user with matching email and role
       const user = await userModel.findOne({ email, role });
       if (!user) {
         return res.status(400).json({
@@ -86,28 +100,41 @@ class userController {
         });
       }
 
-      //check password
+      // Validate password
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) {
-        return res
-          .status(400)
-          .json({ status: "failed", message: "Invalid email or password" });
+        return res.status(400).json({
+          status: "failed",
+          message: "Invalid email or password",
+        });
       }
 
-      //generating token and storing in cookie
-      const token = jwt.sign({ ID: user._id }, process.env.JWT_SECRET);
-      res.cookie("token", token, { httpOnly: true });
-      
-      //matching the user role
+      // Generate JWT token
+      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+        expiresIn: "7d", // optional: token expiry
+      });
+
+      // Set token as HTTP-only cookie
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production", // only send on HTTPS in production
+        sameSite: "Lax",
+      });
+
+      // Send response based on user role with token
       if (user.role === "jobSeeker") {
         return res.status(200).json({
           status: "success",
           message: "JobSeeker Logged In successfully",
+          token, // ✅ include token in response
+          data: user,
         });
       } else if (user.role === "employer") {
         return res.status(200).json({
           status: "success",
           message: "Employer Logged In successfully",
+          token, // ✅ include token in response
+          data: user,
         });
       } else {
         return res.status(400).json({
@@ -123,21 +150,21 @@ class userController {
       });
     }
   };
-  static getUser =async (req, res, next) => {
-  const token = req.headers.authorization?.split(" ")[1]; // Bearer <token>
-
-  if (!token) {
-    return res.status(401).json({ status: "failed", message: "Access Denied. No token provided." });
-  }
-
-  try {
-    const decoded = jwt.verify(token, SECRET_KEY);
-    req.UserData = decoded; // attach decoded payload to request
-    next();
-  } catch (err) {
-    return res.status(401).json({ status: "failed", message: "Invalid or expired token." });
-  }
-};
+  static getUser = async (req, res) => {
+    try {
+      const { id } = req.UserData;
+       const token = req.cookies.token;
+      const data = await userModel.findById(id);
+      return res
+        .status(200)
+        .json({ status: "success", message: "user details found", data, token: token, });
+    } catch (error) {
+      console.error(error);
+      return res
+        .status(500)
+        .json({ status: "failed", message: "Internal server error." });
+    }
+  };
   static signOut = async (req, res) => {
     try {
       //clearing the token from the cookie
