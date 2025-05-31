@@ -20,9 +20,15 @@ cloudinary.config({
 const app = express();
 
 
+// app.use(cors(
+//   {
+//     origin: "https://pnjobportal.netlify.app",
+//     credentials:true,
+//   }
+// ));
 app.use(cors(
   {
-    origin: "https://pnjobportal.netlify.app",
+    origin: "http://localhost:5173",
     credentials:true,
   }
 ));
