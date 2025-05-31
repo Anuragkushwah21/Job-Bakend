@@ -123,20 +123,21 @@ class userController {
       });
     }
   };
-  static getUser = async (req, res) => {
-    try {
-      const { id } = req.UserData;
-      const data = await userModel.findById(id);
-      return res
-        .status(200)
-        .json({ status: "success", message: "user details found", data });
-    } catch (error) {
-      console.error(error);
-      return res
-        .status(500)
-        .json({ status: "failed", message: "Internal server error." });
-    }
-  };
+  static getUser =async (req, res, next) => {
+  const token = req.headers.authorization?.split(" ")[1]; // Bearer <token>
+
+  if (!token) {
+    return res.status(401).json({ status: "failed", message: "Access Denied. No token provided." });
+  }
+
+  try {
+    const decoded = jwt.verify(token, SECRET_KEY);
+    req.UserData = decoded; // attach decoded payload to request
+    next();
+  } catch (err) {
+    return res.status(401).json({ status: "failed", message: "Invalid or expired token." });
+  }
+};
   static signOut = async (req, res) => {
     try {
       //clearing the token from the cookie
