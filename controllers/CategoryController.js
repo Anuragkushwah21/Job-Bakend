@@ -44,6 +44,7 @@ class CategoryController {
     try {
       const data = await Category.find(); // Sort by createdAt in descending order (-1)
       res.status(200).json({
+        success: true,
         data,
       });
     } catch (error) {

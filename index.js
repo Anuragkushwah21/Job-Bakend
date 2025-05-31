@@ -5,6 +5,9 @@ const database = require("./db/db_connection");
 const route = require("./routes/path.js")
 const cookieParser = require("cookie-parser")
 const cloudinary=require("cloudinary").v2
+// Connect to database
+database();
+const cors = require("cors");
 
 
 cloudinary.config({
@@ -16,25 +19,28 @@ cloudinary.config({
 
 const app = express();
 
-const cors = require("cors");
 
 app.use(cors(
   {
     origin: "https://pnjobportal.netlify.app",
     credentials:true,
   }
-)); //for api communication in react
-//file upload
+));
+
+app.use(cookieParser())
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+//for api communication in react
+//file upload call 
 const fileupload = require("express-fileupload");
 //file upload
 app.use(fileupload({ useTempFiles: true }));
 
-// Connect to database
-database();
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser())
+
+
+
 
 
 app.use("/api", route)
